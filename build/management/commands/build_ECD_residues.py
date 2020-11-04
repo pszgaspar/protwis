@@ -57,7 +57,7 @@ class Command(BaseBuild):
 
 	def build_ECD_anomalies(self):
 		with open(self.anomalies_file, 'r') as fa:
-			self.anomalies = yaml.load(fa)
+			self.anomalies = yaml.load(fa, Loader=yaml.FullLoader)
 
 	def build_ECD_gn(self, gn, segment):
 		ecd_gn, created = ResidueGenericNumber.objects.get_or_create(label=gn, protein_segment=segment, scheme=self.scheme)
@@ -67,8 +67,8 @@ class Command(BaseBuild):
 		with open(self.wt_annotation_file, 'r') as f:
 			wt_annotation = yaml.load(f, Loader=yaml.FullLoader)
 		# wt_annotation = OrderedDict([('sctr_human', wt_annotation['sctr_human'])])
-		with open(self.B1_annotation_file, 'r') as fB1:
-			B1_annotation = yaml.load(fB1, Loader=yaml.FullLoader)
+		# with open(self.B1_annotation_file, 'r') as fB1:
+		# 	B1_annotation = yaml.load(fB1, Loader=yaml.FullLoader)
 		
 		for entry_name, val in wt_annotation.items():
 			protein = Protein.objects.get(entry_name=entry_name)
