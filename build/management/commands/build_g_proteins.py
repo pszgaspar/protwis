@@ -62,6 +62,10 @@ class Command(BaseCommand):
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
+
+    gprotein_segends_file = os.sep.join([settings.DATA_DIR, "g_protein_data", "annotation", "segends.yaml"])
+    gprotein_segments_file = os.sep.join([settings.DATA_DIR, "g_protein_data", "annotation", "segment_x_label.yaml"])
+    xlabels = OrderedDict()
     
 
     logger = logging.getLogger(__name__)
@@ -125,73 +129,73 @@ class Command(BaseCommand):
                self.logger.warning('Bouvier source data ' + self.bouvier_file2 + ' not found')
         else:
             # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
-            try:
-                self.purge_signprot_complex_data()
-                self.logger.info('PASS: purge_signprot_complex_data')
-                self.purge_coupling_data()
-                self.logger.info('PASS: purge_coupling_data')
-                self.purge_cgn_proteins()
-                self.logger.info('PASS: purge_cgn_proteins')
-                self.purge_other_subunit_proteins()
-                self.logger.info('PASS: purge_other_subunit_proteins')
+            # try:
+            self.purge_signprot_complex_data()
+            self.logger.info('PASS: purge_signprot_complex_data')
+            self.purge_coupling_data()
+            self.logger.info('PASS: purge_coupling_data')
+            self.purge_cgn_proteins()
+            self.logger.info('PASS: purge_cgn_proteins')
+            self.purge_other_subunit_proteins()
+            self.logger.info('PASS: purge_other_subunit_proteins')
 
-                self.ortholog_mapping = OrderedDict()
-                with open(self.ortholog_file, 'r') as ortholog_file:
-                    ortholog_data = csv.reader(ortholog_file, delimiter=',')
-                    for i, row in enumerate(ortholog_data):
-                        if i == 0:
-                            header = list(row)
+            self.ortholog_mapping = OrderedDict()
+            with open(self.ortholog_file, 'r') as ortholog_file:
+                ortholog_data = csv.reader(ortholog_file, delimiter=',')
+                for i, row in enumerate(ortholog_data):
+                    if i == 0:
+                        header = list(row)
+                        continue
+                    for j, column in enumerate(row):
+                        if j in [0, 1]:
                             continue
-                        for j, column in enumerate(row):
-                            if j in [0, 1]:
+                        if '_' in column:
+                            self.ortholog_mapping[column] = row[0]
+                        else:
+                            if column == '':
                                 continue
-                            if '_' in column:
-                                self.ortholog_mapping[column] = row[0]
-                            else:
-                                if column == '':
-                                    continue
-                                self.ortholog_mapping[column + '_' + header[j]] = row[0]
-                self.logger.info('PASS: ortholog_mapping')
+                            self.ortholog_mapping[column + '_' + header[j]] = row[0]
+            self.logger.info('PASS: ortholog_mapping')
 
-                self.create_g_proteins(filenames)
-                self.logger.info('PASS: create_g_proteins')
-                self.cgn_create_proteins_and_families()
-                self.logger.info('PASS: cgn_create_proteins_and_families')
+            self.create_g_proteins(filenames)
+            self.logger.info('PASS: create_g_proteins')
+            self.cgn_create_proteins_and_families()
+            self.logger.info('PASS: cgn_create_proteins_and_families')
 
-                human_and_orths = self.cgn_add_proteins()
-                self.logger.info('PASS: cgn_add_proteins')
-                self.update_protein_conformation(human_and_orths)
-                self.logger.info('PASS: update_protein_conformation')
-                self.create_barcode()
-                self.logger.info('PASS: create_barcode')
-                self.add_other_subunits()
-                self.logger.info('PASS: add_other_subunits')
-                if os.path.exists(self.inoue_file):
-                    self.add_inoue_coupling_data()
-                    self.logger.info('PASS: add_inoue_coupling_data')
-                else:
-                    self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
-                if os.path.exists(self.bouvier_file):
-                    self.add_bouvier_coupling_data()
-                    self.logger.info('PASS: add_bouvier_coupling_data')
-                else:
-                    self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
-                if os.path.exists(self.inoue_file2):
-                    self.add_inoue_coupling_data2()
-                    self.logger.info('PASS: add_inoue_coupling_data2')
-                else:
-                    self.logger.warning('Inoue-DEG source data ' + self.inoue_file2 + ' not found')
-                if os.path.exists(self.bouvier_file2):
-                    self.add_bouvier_coupling_data2()
-                    self.logger.info('PASS: add_bouvier_coupling_data2')
-                else:
-                    self.logger.warning('Bouvier source data ' + self.bouvier_file2 + ' not found')
+            human_and_orths = self.cgn_add_proteins(skip_orthologs=True)
+            self.logger.info('PASS: cgn_add_proteins')
+            self.update_protein_conformation(human_and_orths)
+            self.logger.info('PASS: update_protein_conformation')
+            self.create_barcode()
+            self.logger.info('PASS: create_barcode')
+            self.add_other_subunits()
+            self.logger.info('PASS: add_other_subunits')
+            if os.path.exists(self.inoue_file):
+                self.add_inoue_coupling_data()
+                self.logger.info('PASS: add_inoue_coupling_data')
+            else:
+                self.logger.warning('Inoue source data ' + self.inoue_file + ' not found')
+            if os.path.exists(self.bouvier_file):
+                self.add_bouvier_coupling_data()
+                self.logger.info('PASS: add_bouvier_coupling_data')
+            else:
+                self.logger.warning('Bouvier source data ' + self.bouvier_file + ' not found')
+            if os.path.exists(self.inoue_file2):
+                self.add_inoue_coupling_data2()
+                self.logger.info('PASS: add_inoue_coupling_data2')
+            else:
+                self.logger.warning('Inoue-DEG source data ' + self.inoue_file2 + ' not found')
+            if os.path.exists(self.bouvier_file2):
+                self.add_bouvier_coupling_data2()
+                self.logger.info('PASS: add_bouvier_coupling_data2')
+            else:
+                self.logger.warning('Bouvier source data ' + self.bouvier_file2 + ' not found')
 
-            except Exception as msg:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
-                self.logger.error(msg)
+            # except Exception as msg:
+            #     exc_type, exc_obj, exc_tb = sys.exc_info()
+            #     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            #     print(exc_type, fname, exc_tb.tb_lineno)
+            #     self.logger.error(msg)
 
     def add_other_subunits(self):
         beta_fam, created = ProteinFamily.objects.get_or_create(slug='100_002', name='Beta',
@@ -483,8 +487,14 @@ class Command(BaseCommand):
 
             similarity = barcode_data[index:index + 1]['aln_seqSim'].values[0]
             identity = barcode_data[index:index + 1]['aln_seqIdn'].values[0]
-            entry_name = barcode_data[index:index + 1]['subfamily'].values[0].lower() + '_human'
-            CGN = barcode_data[index:index + 1]['CGN'].values[0]
+            if "_" in barcode_data[index:index + 1]['gprotein'].values[0]:
+                entry_name = barcode_data[index:index + 1]['gprotein'].values[0]
+            else:
+                entry_name = barcode_data[index:index + 1]['gprotein'].values[0].lower() + '_human'
+            if "." in barcode_data[index:index + 1]['seqnum'].values[0]:
+                cgn = None #barcode_data[index:index + 1]['seqnum'].values[0]
+            else:
+                cgn = Residue.objects.get(protein_conformation__protein__entry_name=entry_name, sequence_number=int(barcode_data[index:index + 1]['seqnum'].values[0]))
             paralog = barcode_data[index:index + 1]['paralog'].values[0]
 
             try:
@@ -493,11 +503,11 @@ class Command(BaseCommand):
                 self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
                 continue
 
-            try:
-                cgn = Residue.objects.get(protein_conformation__protein=p, display_generic_number__label=CGN)
-            except:
-                # self.logger.warning('No residue number (GAP - position) for', CGN, "in ", p.name, "")
-                continue
+            # try:
+            #     cgn = Residue.objects.get(protein_conformation__protein=p, display_generic_number__label=CGN)
+            # except:
+            #     # self.logger.warning('No residue number (GAP - position) for', CGN, "in ", p.name, "")
+            #     continue
 
             if cgn:
                 try:
@@ -506,9 +516,9 @@ class Command(BaseCommand):
                                                                              seq_identity=identity,
                                                                              paralog_score=paralog)
                     if created:
-                        self.logger.info('Created barcode for ' + CGN + ' for protein ' + p.name)
+                        self.logger.info('Created barcode for ' + str(cgn) + ' for protein ' + p.name)
                 except IntegrityError:
-                    self.logger.error('Failed creating barcode for ' + CGN + ' for protein ' + p.name)
+                    self.logger.error('Failed creating barcode for ' + str(cgn) + ' for protein ' + p.name)
 
     def create_g_proteins(self, filenames=False):
         """
@@ -1309,8 +1319,8 @@ class Command(BaseCommand):
         Residue.objects.bulk_create(bulk)
 
     def update_protein_conformation(self, gprotein_list):
-        # gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human']
-        state = ProteinState.objects.get(slug='active')
+        # gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human', 'gnas2_bovin', 'gnat1_bovin']
+        state, c = ProteinState.objects.get_or_create(slug='active')
 
         # add new cgn protein conformations
         for g in gprotein_list:
@@ -1322,7 +1332,125 @@ class Command(BaseCommand):
             except:
                 self.logger.error('Failed to create protein conformation')
 
-        self.update_genericresiduenumber_and_proteinsegments(gprotein_list)
+        # self.update_genericresiduenumber_and_proteinsegments()
+        self.add_cgn_residues2(gprotein_list)
+        # self.update_genericresiduenumber_and_proteinsegments(gprotein_list)
+
+    def update_proteinsegments(self):
+        with open(self.gprotein_segments_file, "r") as f:
+            self.xlabels = yaml.load(f, Loader=yaml.FullLoader)
+        for seg, xlabel in self.xlabels.items():
+            ps, c = ProteinSegment.objects.get_or_create(slug=seg, proteinfamily="Alpha")
+            self.logger.info('Created G protein segment {}'.format(ps))
+
+    def add_cgn_residues2(self, gprotein_list):
+        with open(self.gprotein_segends_file, "r") as f:
+            segpos_data = yaml.load(f, Loader=yaml.FullLoader)
+        with open(self.gprotein_segments_file, "r") as f:
+            xlabels = yaml.load(f, Loader=yaml.FullLoader)
+        cgn_scheme = ResidueNumberingScheme.objects.get(slug="cgn")
+        segments = ProteinSegment.objects.filter(slug__in=xlabels.keys(), proteinfamily="Alpha")
+        for ac in gprotein_list:
+            residues = []
+            gprot = Protein.objects.get(accession=ac)
+            if gprot.entry_name not in segpos_data.keys():
+                continue
+            for seg_i, seg in enumerate(segments):
+                this_seg_residues = []
+                # Nt segment
+                if seg.slug=="Nt":
+                    nt_count = 1
+                    nt_resis = []
+                    for i in range(int(segpos_data[gprot.entry_name]["HNb"])-1, 0, -1):
+                        if len(str(nt_count))==1:
+                            nt_count_formatted = "0"+str(nt_count)
+                        else:
+                            nt_count_formatted = str(nt_count)
+                        rgn, c = ResidueGenericNumber.objects.get_or_create(label="G.Nt.{}".format(nt_count_formatted), protein_segment=seg, scheme=cgn_scheme)
+                        res = Residue(sequence_number=i, amino_acid=gprot.sequence[i-1], display_generic_number=rgn, generic_number=rgn, protein_conformation=gprot.proteinconformation_set.all()[0], protein_segment=seg)
+                        nt_resis.append(res)
+                        nt_count+=1
+                    residues+=nt_resis[::-1]
+                # Ct segment
+                elif seg.slug=="Ct":
+                    ct_count = 1
+                    ct_resis = []
+                    for i in range(int(segpos_data[gprot.entry_name]["H5e"])+1, len(gprot.sequence)+1):
+                        if len(str(ct_count))==1:
+                            ct_count_formatted = "0"+str(ct_count)
+                        else:
+                            ct_count_formatted = str(ct_count)
+                        rgn, c = ResidueGenericNumber.objects.get_or_create(label="G.Ct.{}".format(ct_count_formatted), protein_segment=seg, scheme=cgn_scheme)
+                        res = Residue(sequence_number=i, amino_acid=gprot.sequence[i-1], display_generic_number=rgn, generic_number=rgn, protein_conformation=gprot.proteinconformation_set.all()[0], protein_segment=seg)
+                        ct_resis.append(res)
+                        ct_count+=1
+                    residues+=ct_resis
+                # Other segments with gns
+                elif xlabels[seg.slug]!="None":
+                    # Segment with x position
+                    xpos = segpos_data[gprot.entry_name][seg.slug+"x"]
+                    if xpos!="-":
+                        bpos = int(segpos_data[gprot.entry_name][seg.slug+"b"])
+                        xpos = int(xpos)
+                        epos = int(segpos_data[gprot.entry_name][seg.slug+"e"])
+                        # Segment is partially aligned, no gns at start
+                        if not seg.fully_aligned: ### FIXME when needed, no current use case
+                            pass
+                        xlab = xlabels[seg.slug]
+                        xlab_num = int(xlab.split(".")[-1])
+                        # x_position
+                        rgn, c = ResidueGenericNumber.objects.get_or_create(label=xlab, protein_segment=seg, scheme=cgn_scheme)
+                        xres = Residue(sequence_number=xpos, amino_acid=gprot.sequence[xpos-1], display_generic_number=rgn, generic_number=rgn, protein_conformation=gprot.proteinconformation_set.all()[0], protein_segment=seg)
+                        # upstream
+                        for resnum in range(xpos-1, bpos-1, -1):
+                            xlab_num-=1
+                            res = self.get_cgn_res(xlab_num, xlab, seg, cgn_scheme, resnum, gprot)
+                            this_seg_residues.append(res)
+                        this_seg_residues = this_seg_residues[::-1] + [xres]
+                        # downstream
+                        xlab_num = int(xlab.split(".")[-1])
+                        for resnum in range(xpos+1, epos+1):
+                            xlab_num+=1
+                            res = self.get_cgn_res(xlab_num, xlab, seg, cgn_scheme, resnum, gprot)
+                            this_seg_residues.append(res)
+                        # Segment is partially aligned, no gns at end
+                        if not seg.fully_aligned:
+                            next_seg_b = int(segpos_data[gprot.entry_name][segments[seg_i+1].slug+"b"])
+                            for resnum in range(epos+1, next_seg_b):
+                                res = Residue(sequence_number=resnum, amino_acid=gprot.sequence[resnum-1], display_generic_number=None, generic_number=None, protein_conformation=gprot.proteinconformation_set.all()[0], protein_segment=seg)
+                                this_seg_residues.append(res)
+                    # Segment annotated with "-"
+                    else:
+                        this_seg_residues = self.get_loop_residues(segpos_data, gprot, segments, seg_i, seg)
+                    residues+=this_seg_residues
+                elif xlabels[seg.slug]=="None":
+                    this_seg_residues = self.get_loop_residues(segpos_data, gprot, segments, seg_i, seg)
+                    residues+=this_seg_residues
+            Residue.objects.bulk_create(residues)
+
+    def get_loop_residues(self, segpos_data, gprot, segments, seg_i, seg):
+        this_seg_residues = []
+        prev_i = 1
+        next_i = 1
+        while segments[seg_i-prev_i].slug+"e" not in segpos_data[gprot.entry_name] or segpos_data[gprot.entry_name][segments[seg_i-prev_i].slug+"e"]=="-":
+            prev_i-=1
+        while segments[seg_i+next_i].slug+"b" not in segpos_data[gprot.entry_name] or segpos_data[gprot.entry_name][segments[seg_i+next_i].slug+"b"]=="-":
+            next_i+=1
+        prev_seg_e = int(segpos_data[gprot.entry_name][segments[seg_i-prev_i].slug+"e"])
+        next_seg_b = int(segpos_data[gprot.entry_name][segments[seg_i+next_i].slug+"b"])
+        for resnum in range(prev_seg_e+1, next_seg_b):
+            res = Residue(sequence_number=resnum, amino_acid=gprot.sequence[resnum-1], display_generic_number=None, generic_number=None, protein_conformation=gprot.proteinconformation_set.all()[0], protein_segment=seg)
+            this_seg_residues.append(res)
+        return this_seg_residues
+
+    def get_cgn_res(self, xlab_num, xlab, seg, cgn_scheme, resnum, gprot):
+        if len(str(xlab_num))==1:
+            gn = xlab[:-2]+"0"+str(xlab_num)
+        else:
+            gn = xlab[:-2]+str(xlab_num)
+        rgn, c = ResidueGenericNumber.objects.get_or_create(label=gn, protein_segment=seg, scheme=cgn_scheme)
+        res = Residue(sequence_number=resnum, amino_acid=gprot.sequence[resnum-1], display_generic_number=rgn, generic_number=rgn, protein_conformation=gprot.proteinconformation_set.all()[0], protein_segment=seg)
+        return res
 
     def update_genericresiduenumber_and_proteinsegments(self, gprotein_list):
 
@@ -1368,7 +1496,7 @@ class Command(BaseCommand):
 
         self.add_cgn_residues(gprotein_list)
 
-    def cgn_add_proteins(self):
+    def cgn_add_proteins(self, skip_orthologs=False):
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
 
@@ -1469,7 +1597,10 @@ class Command(BaseCommand):
             self.cgn_creat_gproteins(pfm, rns, a, up)
 
         # human gproteins
-        orthologs_lower = [x.lower() for x in orthologs]
+        if skip_orthologs:
+            orthologs_lower = ["gnas2_bovin", "gnat1_bovin"]
+        else:
+            orthologs_lower = [x.lower() for x in orthologs]
         # print(orthologs_lower)
 
         # orthologs to human gproteins
@@ -1676,7 +1807,7 @@ class Command(BaseCommand):
                 j += 1
 
         # function to create necessary arguments to add protein entry
-        self.cgn_add_proteins()
+        self.cgn_add_proteins(skip_orthologs=True)
 
     def parse_uniprot_file(self, accession):
         filename = accession + '.txt'

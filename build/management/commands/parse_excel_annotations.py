@@ -70,6 +70,9 @@ class Command(BaseCommand):
     ECD_wt_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_wt.yaml'])
     ECD_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ECD_anomalies.yaml'])
 
+    g_protein_annotation = os.sep.join([settings.DATA_DIR, "g_protein_data", "annotation", "segends.xlsx"])
+    g_protein_seg_end_file = os.sep.join([settings.DATA_DIR, "g_protein_data", "annotation", "segends.yaml"])
+
 
     if not os.path.exists(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])):
         os.makedirs(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation']))
@@ -81,10 +84,21 @@ class Command(BaseCommand):
         self.dump_ECD_files()
         self.ClassD_data = self.parse_excel(self.ClassD_annotation_source_file)
         self.dump_ClassD_data()
+        self.gprotein_data = self.parse_excel(self.g_protein_annotation)
+        self.dump_gprotein_data()
         # self.analyse_annotation_consistency()
         self.find_representatives()
         if options['m']:
             self.main_template_search()
+
+    def dump_gprotein_data(self):
+        data_dict = OrderedDict()
+        for key, val in self.gprotein_data["seqpos"].items():
+            entry_name = val["UniProt"]
+            del val["UniProt"]
+            data_dict[entry_name] = val
+        with open(self.g_protein_seg_end_file, "w") as outfile:
+            yaml.dump(data_dict, outfile, indent=4)
 
     def dump_ECD_files(self):
         data_dict = OrderedDict()

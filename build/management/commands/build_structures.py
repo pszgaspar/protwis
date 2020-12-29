@@ -1122,7 +1122,7 @@ class Command(BaseBuild):
 
                     # pdb code
                     if 'pdb' in sd:
-                        web_resource = WebResource.objects.get(slug='pdb')
+                        web_resource = WebResource.objects.get(slug='pdb', name="Protein Data Bank")
                         s.pdb_code, created = WebLink.objects.get_or_create(index=sd['pdb'], web_resource=web_resource)
                     else:
                         self.logger.error('PDB code not specified for structure {}, skipping!'.format(sd['pdb']))
