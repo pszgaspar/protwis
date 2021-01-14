@@ -103,6 +103,7 @@ class Command(BuildHumanProteins):
             self.segments = ProteinSegment.objects.filter(partial=False, proteinfamily=self.signprot)
         else:
             families = self.families
+        
         while count.value<len(families):
             with lock:
                 family = families[count.value]
@@ -111,6 +112,10 @@ class Command(BuildHumanProteins):
             # get proteins in this family
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
                 species__common_name="Human").prefetch_related('species', 'residue_numbering_scheme')
+
+            # if family does not have human equivalents, like Class D1
+            if len(proteins)==0:
+                proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',).prefetch_related('species', 'residue_numbering_scheme')
 
             if proteins.count() <= 1:
                 continue
