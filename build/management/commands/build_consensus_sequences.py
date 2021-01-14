@@ -33,11 +33,13 @@ class Command(BuildHumanProteins):
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc', type=int, action='store', dest='proc', default=1, help='Number of processes to run')
         parser.add_argument('--signprot', type=str, action='store', dest='signprot', default=False, help='Only run for either G proteins or arrestins')
+        parser.add_argument('--input-slug', type=str, action='store', dest='input-slug', default=False, help='Run only on a family slug from ProteinFamily table')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False, help='Purge all consensus data')
 
     def handle(self, *args, **options):        
         try:
             self.signprot = options['signprot']
+            self.input_slug = options['input-slug']
             if options['purge']:
                 self.purge_consensus_sequences()
             self.logger.info('CREATING CONSENSUS SEQUENCES')
@@ -103,6 +105,9 @@ class Command(BuildHumanProteins):
             self.segments = ProteinSegment.objects.filter(partial=False, proteinfamily=self.signprot)
         else:
             families = self.families
+
+        if self.input_slug:
+            families = ProteinFamily.objects.filter(slug__startswith=self.input_slug)
         
         while count.value<len(families):
             with lock:
