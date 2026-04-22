@@ -339,7 +339,7 @@ class Command(BaseBuild):
 
                     ### Chimera mapping to wt ###
                     good_enough_matches = []
-                    if len(alignment_fragments)>0:
+                    if len(alignment_fragments)>0 or sc.structure.pdb_code.index in ['9LL7']:
                         chimeras = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras.fasta'])), "fasta"))
 
                         # blast chimeras to find best chimera match
